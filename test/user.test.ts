@@ -1,7 +1,7 @@
 import * as supertest from 'supertest';
 import 'jest';
 
-const request = supertest('http://localhost:30123/user');
+const request = supertest('http://api.tavern.mzharkov.ru/user');
 const options: any = {
     userInfo: {
         ID: null
