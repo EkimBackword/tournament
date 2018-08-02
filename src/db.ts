@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
-import { DB_CONFIG } from '../config/database.config'
+import { DB_CONFIG } from './config/database.config';
 
 const db = new Sequelize({
     name: DB_CONFIG.name,
