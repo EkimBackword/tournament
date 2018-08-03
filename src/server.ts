@@ -36,12 +36,14 @@ app.use(express.static(__dirname + '/../../src'));
 
 import './authentication';
 import { UserController } from './controllers/User.controller';
+import { TournamentController } from './controllers/Tournament.controller';
 import { FilesController } from './controllers/Files.controller';
 
 app.get('/test', (req, res) => {
     res.send('Тест');
 });
 new UserController(app);
+new TournamentController(app);
 new FilesController(app);
 
 db.authenticate()

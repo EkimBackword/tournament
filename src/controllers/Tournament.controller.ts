@@ -14,7 +14,7 @@ export class TournamentController {
         router.get('/list', isAuth, this.list);
         router.get('/search/:term', isAuth, this.search);
 
-        router.get('/:id', isAuth, this.profile);
+        router.get('/:id', isAuth, this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
         router.delete('/:id', requireAdmin, this.delete);
 
@@ -23,9 +23,9 @@ export class TournamentController {
     }
 
     /**
-     * 
-     * @param req Объект запроса
-     * @param res Объект ответа
+     * Добавление турнира
+     * @param req Request { body: { JsonData, JsonData, ID } }
+     * @param res Response
      */
     private async add(req: Request, res: Response) {
         const error = await Tournament.checkModel(req);
@@ -46,9 +46,9 @@ export class TournamentController {
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
+     * Получение списка турниров
+     * @param req Request
+     * @param res Response
      */
     private async list(req: Request, res: Response) {
         const WHERE: any = {};
@@ -60,31 +60,22 @@ export class TournamentController {
         }
         const data = await Tournament.findAll<Tournament>({ where: WHERE, offset, limit });
         const count = await Tournament.count({ where: WHERE });
-        const result = data.map(u => {
-            const curUser: ITournament = u.toJSON();
-        });
+        const result = data.map(u => u.toJSON());
         return res.json({ result, count });
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
+     * Поиск турниров
+     * @param req Request
+     * @param res Response
      */
     private async search (req: Request, res: Response) {
         try {
             const term: string = req.params.term;
-            const list = await User.findAll<User>();
-            const result = list.filter(item => {
-                                    if (item.FIO.toLowerCase().indexOf(term.toLowerCase()) > -1) {
-                                        if (req.query.role !== void 0) {
-                                            return item.Role === req.query.role;
-                                        }
-                                        return true;
-                                    }
-                                    return false;
-                                })
-                                .map(item => item.toJSON());
+            const listTournament = await Tournament.findAll<Tournament>();
+            const result = listTournament
+                            .filter(tournament => tournament.Title.toLowerCase().indexOf(term.toLowerCase()) > -1)
+                            .map(item => item.toJSON());
             return res.json(result);
         } catch (err) {
             return res.status(500).json(err);
@@ -92,46 +83,39 @@ export class TournamentController {
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
+     * Детальная информация
+     * @param req Request
+     * @param res Response
      */
-    private async profile(req: Request, res: Response) {
+    private async tournamentDetails(req: Request, res: Response) {
         const includes = [];
-        if (req.query.withTournaments !== void 0) {
-            includes.push(Tournament);
+        const id = req.params.id;
+        if (req.query.withUser !== void 0) {
+            includes.push(User);
         }
-        if (includes.length === 0) return res.json(req.user);
-        const currentUser: User = await User.findById<User>(req.user.ID, { include: includes });
-        const result: IUser = currentUser.toJSON();
-        delete result.Hash;
+        const result: ITournament = (await Tournament.findById<Tournament>(id, { include: includes })).toJSON();
         return res.json(result);
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
+     * Редактирование турнира
+     * @param req Request
+     * @param res Response
      */
     private async edit(req: Request, res: Response) {
-        const error = await User.checkFullModel(req, true);
+        const error = await Tournament.checkModel(req);
         if (error != null) return res.status(400).json(error);
 
         const id = req.params.id;
-        const CurrentUser = await User.findById<User>(id);
-        if (CurrentUser === null) {
-            return res.status(404).json({ message: 'Такого пользователя нет'});
+        const tournament = await Tournament.findById<Tournament>(id);
+        if (tournament === null) {
+            return res.status(404).json({ message: 'Такого турнира нет'});
         }
 
         try {
-            CurrentUser.Login = req.body.Login;
-            CurrentUser.FIO = req.body.FIO;
-            CurrentUser.Role = req.body.Role;
-            if (req.body.Password !== void 0) {
-                const hash = passwordHash.generate(req.body.Password);
-                CurrentUser.Hash = hash;
-            }
-            await CurrentUser.save();
+            tournament.Title = req.body.Title;
+            tournament.JsonData = req.body.JsonData;
+            await tournament.save();
             return res.status(204).json();
         } catch (err) {
             return res.status(500).json(err);
@@ -139,17 +123,15 @@ export class TournamentController {
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
+     * Удаление турнира
+     * @param req Request
+     * @param res Response
      */
     private async delete(req: Request, res: Response) {
         const id = req.params.id;
-        const user = await User.findById<User>(id, {include: [ Tournament ]});
-        const tournamentList = await Tournament.findAll({where: { UserID: user.ID }});
-        tournamentList.forEach(async i => await i.destroy());
+        const tournament = await Tournament.findById<Tournament>(id);
         try {
-            await user.destroy();
+            await tournament.destroy();
             return res.status(204).json();
         } catch (err) {
             return res.status(500).json(err);
