@@ -11,13 +11,12 @@ export class TournamentController {
         const router = Router();
 
         router.post('/add', isAuth, this.add);
-        router.get('/list', isAuth, this.list);
+        router.get('/list', this.list);
         router.get('/search/:term', isAuth, this.search);
 
-        router.get('/:id', isAuth, this.tournamentDetails);
+        router.get('/:id', this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
         router.delete('/:id', requireAdmin, this.delete);
-
 
         app.use('/tournament', router);
     }
@@ -33,13 +32,13 @@ export class TournamentController {
 
         try {
             const data: ITournament = {
-                Title: req.body.JsonData,
+                Title: req.body.Title,
                 JsonData: req.body.JsonData,
                 UserID: req.user.ID
             };
             let newTournament = new Tournament(data);
             newTournament = await newTournament.save();
-            return res.status(204).json();
+            return res.status(200).json(newTournament.ID);
         } catch (err) {
             return res.status(500).json(err);
         }
