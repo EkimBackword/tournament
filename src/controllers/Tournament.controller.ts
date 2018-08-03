@@ -53,14 +53,17 @@ export class TournamentController {
     private async list(req: Request, res: Response) {
         const WHERE: any = {};
         const UserID = req.query.UserID;
+        const offset = req.query.offset || 0;
+        const limit = req.query.limit || 25;
         if (UserID !== void 0) {
             WHERE['UserID'] = UserID;
         }
-        const data = await Tournament.findAll<Tournament>({ where: WHERE });
+        const data = await Tournament.findAll<Tournament>({ where: WHERE, offset, limit });
+        const count = await Tournament.count({ where: WHERE });
         const result = data.map(u => {
             const curUser: ITournament = u.toJSON();
         });
-        return res.json(result);
+        return res.json({ result, count });
     }
 
     /**
