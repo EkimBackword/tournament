@@ -7,6 +7,7 @@ import session = require('express-session');
 import * as passport from 'passport';
 
 import db from './db';
+import './telegram/bot';
 
 
 const cors = require('cors');
