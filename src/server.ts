@@ -7,7 +7,6 @@ import session = require('express-session');
 import * as passport from 'passport';
 
 import db from './db';
-import './telegram/bot';
 
 
 const cors = require('cors');
@@ -39,10 +38,12 @@ import './authentication';
 import { UserController } from './controllers/User.controller';
 import { TournamentController } from './controllers/Tournament.controller';
 import { FilesController } from './controllers/Files.controller';
+import { TelegramService } from './telegram/telegram.service';
 
 app.get('/test', (req, res) => {
     res.send('Тест');
 });
+new TelegramService();
 new UserController(app);
 new TournamentController(app);
 new FilesController(app);
