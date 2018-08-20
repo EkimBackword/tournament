@@ -40,7 +40,7 @@ export class TelegramService {
     }
 
     sendMessage(msg: string, chatId: string|number) {
-        this.bot.telegram.sendMessage(chatId, msg);
+        return this.bot.telegram.sendMessage(chatId, msg);
     }
 
     private init() {

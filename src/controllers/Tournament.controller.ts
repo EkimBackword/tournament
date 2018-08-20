@@ -6,6 +6,7 @@ import { isAuth, requireAdmin } from '../authentication';
 import User, { IUser, UserRoles } from '../models/User';
 import Tournament, { ITournament, TournamentStatusENUM } from '../models/Tournament';
 import { TelegramService } from '../telegram/telegram.service';
+import Members from '../models/Members';
 
 export class TournamentController {
     protected TelegramServiceInstance: TelegramService;
@@ -143,5 +144,33 @@ export class TournamentController {
         } catch (err) {
             return res.status(500).json(err);
         }
+    }
+
+    /**
+     * Удаление турнира
+     * @param req Request
+     * @param res Response
+     */
+    private async sendOpponentInfo(req: Request, res: Response) {
+        const id = req.params.id;
+        try {
+            const tournament = await Tournament.findById<Tournament>(id, { include: [Members] });
+            const first = await User.findById<User>(id, { include: [ Members ] });
+            const second = await User.findById<User>(id, { include: [ Members ] });
+            await this.getOpponentInfo(first, second, tournament.ID);
+            await this.getOpponentInfo(second, first, tournament.ID);
+            return res.status(204).json();
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    }
+
+    private getOpponentInfo(first: User, second: User, tournamentID: number) {
+        const DeckList = second.TournamentsAsMember.find(m => m.TournamentID == tournamentID).DeckList;
+        const msg = `
+Доброго времени суток, ${first.BattleTag}!
+Ваш следуюший оппонент: ${second.BattleTag}.
+Его колоды: ${DeckList}`;
+        return this.TelegramServiceInstance.sendMessage(msg, second.ChatID);
     }
 }
