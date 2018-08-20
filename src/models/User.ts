@@ -4,6 +4,7 @@ import {
 } from 'sequelize-typescript';
 import { Request } from 'express';
 import Tournament, { ITournament } from './Tournament';
+import Members, { IMembers } from './Members';
 
 export interface IUser {
     ID?: number;
@@ -11,8 +12,12 @@ export interface IUser {
     FIO: string;
     Role: UserRoles;
     Hash: string;
+    ChatInfo?: string;
+    ChatID?: number;
+    BattleTag?: string;
 
     Tournaments?: ITournament[];
+    TournamentsAsMember?: IMembers[];
 }
 
 export enum UserRoles {
@@ -32,9 +37,17 @@ export default class User extends Model<User> implements IUser {
     Role: UserRoles;
     @Column({ type: DataType.STRING })
     Hash: string;
+    @Column({ type: DataType.TEXT, allowNull: true })
+    ChatInfo?: string;
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    ChatID?: number;
+    @Column({ type: DataType.STRING, allowNull: true })
+    BattleTag?: string;
 
     @HasMany(() => Tournament, 'UserID')
     Tournaments?: ITournament[];
+    @HasMany(() => Members, 'TournamentID')
+    TournamentsAsMember?: IMembers[];
 
     /**
      * @description Проверка полной модели пришедшей в запросе
@@ -65,4 +78,17 @@ export default class User extends Model<User> implements IUser {
         if (errors.isEmpty()) return null;
         return errors.array({onlyFirstError: true})[0];
     }
+
+    public getChatInfo(): IUserChatInfo | null {
+        return this.ChatInfo === null ? null : JSON.parse(this.ChatInfo) as IUserChatInfo;
+    }
+}
+
+export interface IUserChatInfo {
+    id: number;
+    type: string;
+    title?: string;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
 }

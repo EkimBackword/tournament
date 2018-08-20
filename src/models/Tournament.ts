@@ -4,14 +4,20 @@ import {
 } from 'sequelize-typescript';
 import { Request } from 'express';
 import User, { IUser } from './User';
+import Members, { IMembers } from './Members';
 
 export interface ITournament {
     ID?: number;
     Title: string;
     JsonData: string;
+    Status: TournamentStatusENUM;
+    DeckCount: number;
     UserID?: number;
+    CreationDate?: Date;
+    UpdatedAt?: Date;
 
     User?: IUser;
+    Members?: IMembers[];
 }
 
 @Table
@@ -22,11 +28,24 @@ export default class Tournament extends Model<Tournament> implements ITournament
     Title: string;
     @Column({ type: DataType.TEXT })
     JsonData: string;
+    @Column({ type: DataType.INTEGER, defaultValue: 0 })
+    Status: TournamentStatusENUM;
+    @Column({ type: DataType.INTEGER, defaultValue: 4 })
+    DeckCount: number;
+    @ForeignKey(() => User)
     @Column({ type: DataType.INTEGER, allowNull: true })
     UserID?: number;
+    @CreatedAt
+    @Column({ allowNull: true })
+    CreationDate?: Date;
+    @UpdatedAt
+    @Column({ allowNull: true })
+    UpdatedAt?: Date;
 
     @BelongsTo(() => User, 'UserID')
     User?: IUser;
+    @HasMany(() => Members, 'TournamentID')
+    Members?: IMembers[];
 
     /**
      * @description Проверка модели запроса авторизации
@@ -40,4 +59,10 @@ export default class Tournament extends Model<Tournament> implements ITournament
         if (errors.isEmpty()) return null;
         return errors.array({onlyFirstError: true})[0];
     }
+}
+
+export enum TournamentStatusENUM {
+    'new',
+    'start',
+    'finished'
 }

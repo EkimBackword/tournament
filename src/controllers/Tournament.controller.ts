@@ -4,11 +4,16 @@ import { Model, Sequelize } from 'sequelize-typescript';
 import * as passport from 'passport';
 import { isAuth, requireAdmin } from '../authentication';
 import User, { IUser, UserRoles } from '../models/User';
-import Tournament, { ITournament } from '../models/Tournament';
+import Tournament, { ITournament, TournamentStatusENUM } from '../models/Tournament';
+import { TelegramService } from '../telegram/telegram.service';
 
 export class TournamentController {
+    protected TelegramServiceInstance: TelegramService;
+
     constructor(app: Application) {
         const router = Router();
+        this.TelegramServiceInstance = TelegramService.getInstance();
+        // this.TelegramServiceInstance.sendMessage('Тестовое письмо', 246156135); // Письмо мне в личку
 
         router.post('/add', isAuth, this.add);
         router.get('/list', this.list);
@@ -17,6 +22,7 @@ export class TournamentController {
         router.get('/:id', this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
         router.delete('/:id', requireAdmin, this.delete);
+
 
         app.use('/tournament', router);
     }
@@ -34,7 +40,9 @@ export class TournamentController {
             const data: ITournament = {
                 Title: req.body.Title,
                 JsonData: req.body.JsonData,
-                UserID: req.user.ID
+                UserID: req.user.ID,
+                DeckCount: req.user.DeckCount ? req.user.DeckCount : 4,
+                Status: TournamentStatusENUM.new
             };
             let newTournament = new Tournament(data);
             newTournament = await newTournament.save();
