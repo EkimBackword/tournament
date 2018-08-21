@@ -7,6 +7,7 @@ import User, { IUser, UserRoles } from '../models/User';
 import Tournament, { ITournament, TournamentStatusENUM } from '../models/Tournament';
 import { TelegramService } from '../telegram/telegram.service';
 import Members from '../models/Members';
+import BanRequest, { IBanRequest } from '../models/BanRequest';
 
 export class TournamentController {
     protected TelegramServiceInstance: TelegramService;
@@ -22,6 +23,7 @@ export class TournamentController {
 
         router.get('/:id', this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
+        router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo);
         router.delete('/:id', requireAdmin, this.delete);
 
 
@@ -155,22 +157,50 @@ export class TournamentController {
         const id = req.params.id;
         try {
             const tournament = await Tournament.findById<Tournament>(id, { include: [Members] });
-            const first = await User.findById<User>(id, { include: [ Members ] });
-            const second = await User.findById<User>(id, { include: [ Members ] });
-            await this.getOpponentInfo(first, second, tournament.ID);
-            await this.getOpponentInfo(second, first, tournament.ID);
+            const gamer = await User.findById<User>(req.body.gamerID, { include: [ Members ] });
+            const opponent = await User.findById<User>(req.body.opponentID, { include: [ Members ] });
+
+            const banRequest: IBanRequest = {
+                TournamentID: tournament.ID,
+
+                GamerBattleTag: gamer.BattleTag,
+                GamerChatID: gamer.ChatID,
+                GamerDeckList: gamer.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList,
+
+                OpponentBattleTag: opponent.BattleTag,
+                OpponentChatID: opponent.ChatID,
+                OpponentDeckList: opponent.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList,
+            };
+
+            let Request = new BanRequest(banRequest);
+            Request = await Request.save();
+
+            await this.getOpponentInfo(
+                banRequest.GamerBattleTag,
+                banRequest.GamerChatID,
+                banRequest.OpponentBattleTag,
+                banRequest.OpponentDeckList,
+                banRequest.ID
+            );
+            await this.getOpponentInfo(
+                banRequest.OpponentBattleTag,
+                banRequest.OpponentChatID,
+                banRequest.GamerBattleTag,
+                banRequest.GamerDeckList,
+                banRequest.ID
+            );
             return res.status(204).json();
         } catch (err) {
             return res.status(500).json(err);
         }
     }
 
-    private getOpponentInfo(first: User, second: User, tournamentID: number) {
-        const DeckList = second.TournamentsAsMember.find(m => m.TournamentID == tournamentID).DeckList;
+    private getOpponentInfo(GamerBattleTag: string, GamerChatID: number, OpponentBattleTag: string, DeckList: string, RequestID: number) {
         const msg = `
-Доброго времени суток, ${first.BattleTag}!
-Ваш следуюший оппонент: ${second.BattleTag}.
-Его колоды: ${DeckList}`;
-        return this.TelegramServiceInstance.sendMessage(msg, second.ChatID);
+Доброго времени суток, ${GamerBattleTag}!
+Ваш следуюший оппонент: ${OpponentBattleTag}.
+Его колоды: ${DeckList}
+Введите: Забанить деку [DeckName] (${RequestID})`;
+        return this.TelegramServiceInstance.sendMessage(msg, GamerChatID);
     }
 }

@@ -5,6 +5,7 @@ import { DECK_CLASSES } from './hearthstone.info';
 import Tournament, { TournamentStatusENUM } from '../models/Tournament';
 import User, { IUser } from '../models/User';
 import Members, { UserRoles, IMembers } from '../models/Members';
+import BanRequest from '../models/BanRequest';
 
 const Markup = require('telegraf/markup');
 const session = require('telegraf/session');
@@ -214,8 +215,42 @@ export class TelegramService {
             console.log((ctx as any).match);
             return ctx.reply('Пока пока');
         });
+        this.bot.hears(/Забанить деку (.*) \((.*)\)/i, (ctx) => this.banDeck(ctx));
     }
 
+    private async banDeck(ctx: ContextMessageUpdate) {
+        const match = (ctx as any).match;
+        const deck = match[1];
+        const banRequestID = match[2];
+        const ChatID = ctx.chat.id;
+        const banRequest = await BanRequest.findById<BanRequest>(banRequestID);
+        if (ChatID === banRequest.GamerChatID) {
+            banRequest.OpponentBannedDeck = deck;
+        } else if (ChatID === banRequest.OpponentChatID) {
+            banRequest.GamerBannedDeck = deck;
+        } else {
+            return ctx.reply('Что-то пошло не так. Не найден матч');
+        }
+        await banRequest.save();
+        if (banRequest.OpponentBannedDeck && banRequest.GamerBannedDeck) {
+            let DeckToSend;
+            let BattleTagToSend;
+            if (ChatID === banRequest.GamerChatID) {
+                banRequest.OpponentBannedDeck = deck;
+                BattleTagToSend = banRequest.GamerBattleTag;
+                DeckToSend = banRequest.GamerBannedDeck;
+                this.sendMessage(`Ваш противник ${banRequest.OpponentBattleTag} забанил ${deck}`, banRequest.OpponentChatID);
+            } else if (ChatID === banRequest.OpponentChatID) {
+                banRequest.GamerBannedDeck = deck;
+                BattleTagToSend = banRequest.OpponentBattleTag;
+                DeckToSend = banRequest.OpponentBannedDeck;
+                this.sendMessage(`Ваш противник ${banRequest.GamerBattleTag} забанил ${deck}`, banRequest.GamerChatID);
+            }
+            return ctx.reply(`Ваш противник ${BattleTagToSend} забанил ${DeckToSend}`);
+        } else {
+            return ctx.reply('Ждём выбора противника.');
+        }
+    }
 
     private generatePassword() {
         const length = 8;
