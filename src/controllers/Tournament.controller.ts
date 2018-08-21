@@ -104,7 +104,18 @@ export class TournamentController {
             includes.push(User);
         }
         if (req.query.withMembers !== void 0) {
-            includes.push(Members);
+            includes.push({
+                model: Members,
+                include: [{
+                    model: User,
+                    attributes: [
+                        'ID',
+                        'Login',
+                        'FIO',
+                        'BattleTag'
+                    ]
+                }],
+            });
         }
         const result: ITournament = (await Tournament.findById<Tournament>(id, { include: includes })).toJSON();
         return res.json(result);
