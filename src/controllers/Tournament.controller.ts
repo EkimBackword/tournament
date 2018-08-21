@@ -103,6 +103,9 @@ export class TournamentController {
         if (req.query.withUser !== void 0) {
             includes.push(User);
         }
+        if (req.query.withMembers !== void 0) {
+            includes.push(Members);
+        }
         const result: ITournament = (await Tournament.findById<Tournament>(id, { include: includes })).toJSON();
         return res.json(result);
     }
@@ -125,6 +128,9 @@ export class TournamentController {
         try {
             tournament.Title = req.body.Title;
             tournament.JsonData = req.body.JsonData;
+            if (req.body.Status) {
+                tournament.Status = req.body.Status;
+            }
             await tournament.save();
             return res.status(204).json();
         } catch (err) {
