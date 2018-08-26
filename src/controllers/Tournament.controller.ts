@@ -9,6 +9,9 @@ import { TelegramService } from '../telegram/telegram.service';
 import Members from '../models/Members';
 import BanRequest, { IBanRequest } from '../models/BanRequest';
 
+import { DECK_CLASSES } from '../telegram/hearthstone.info';
+const Markup = require('telegraf/markup');
+
 export class TournamentController {
     protected TelegramServiceInstance: TelegramService;
 
@@ -23,7 +26,7 @@ export class TournamentController {
 
         router.get('/:id', this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
-        router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo);
+        router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo.bind(this));
         router.delete('/:id', requireAdmin, this.delete);
 
 
@@ -177,6 +180,7 @@ export class TournamentController {
             const gamer = await User.findById<User>(req.body.gamerID, { include: [ Members ] });
             const opponent = await User.findById<User>(req.body.opponentID, { include: [ Members ] });
 
+
             const banRequest: IBanRequest = {
                 TournamentID: tournament.ID,
 
@@ -191,33 +195,42 @@ export class TournamentController {
 
             let Request = new BanRequest(banRequest);
             Request = await Request.save();
+            if (Request.ID) {
+                await this.getOpponentInfo(
+                    banRequest.GamerBattleTag,
+                    banRequest.GamerChatID,
+                    banRequest.OpponentBattleTag,
+                    banRequest.OpponentDeckList,
+                    Request.ID
+                );
+                await this.getOpponentInfo(
+                    banRequest.OpponentBattleTag,
+                    banRequest.OpponentChatID,
+                    banRequest.GamerBattleTag,
+                    banRequest.GamerDeckList,
+                    Request.ID
+                );
+            } else {
+                console.log(Request);
+            }
 
-            await this.getOpponentInfo(
-                banRequest.GamerBattleTag,
-                banRequest.GamerChatID,
-                banRequest.OpponentBattleTag,
-                banRequest.OpponentDeckList,
-                banRequest.ID
-            );
-            await this.getOpponentInfo(
-                banRequest.OpponentBattleTag,
-                banRequest.OpponentChatID,
-                banRequest.GamerBattleTag,
-                banRequest.GamerDeckList,
-                banRequest.ID
-            );
             return res.status(204).json();
         } catch (err) {
+            console.log(err);
             return res.status(500).json(err);
         }
     }
 
-    private getOpponentInfo(GamerBattleTag: string, GamerChatID: number, OpponentBattleTag: string, DeckList: string, RequestID: number) {
+    private async getOpponentInfo(GamerBattleTag: string, GamerChatID: number, OpponentBattleTag: string, DeckList: string, RequestID: number) {
         const msg = `
 Доброго времени суток, ${GamerBattleTag}!
 Ваш следуюший оппонент: ${OpponentBattleTag}.
-Его колоды: ${DeckList}
-Введите: Забанить деку [DeckName] (${RequestID})`;
-        return this.TelegramServiceInstance.sendMessage(msg, GamerChatID);
+Введите колоду, которую вы хотите забанить:`;
+        return this.TelegramServiceInstance.sendMessage(msg, GamerChatID,
+            Markup.inlineKeyboard(
+                DECK_CLASSES.filter(d => DeckList.split(', ').some(_d => _d === d.id))
+                            .map(d => Markup.callbackButton(d.title, `ban:deck:${d.id}:${RequestID}`))
+            , {columns: 1}).extra()
+        );
     }
 }

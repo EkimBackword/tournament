@@ -46,7 +46,7 @@ export default class User extends Model<User> implements IUser {
 
     @HasMany(() => Tournament, 'UserID')
     Tournaments?: ITournament[];
-    @HasMany(() => Members, 'TournamentID')
+    @HasMany(() => Members, 'UserID')
     TournamentsAsMember?: IMembers[];
 
     /**

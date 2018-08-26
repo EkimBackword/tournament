@@ -40,8 +40,8 @@ export class TelegramService {
         return Instance;
     }
 
-    sendMessage(msg: string, chatId: string|number) {
-        return this.bot.telegram.sendMessage(chatId, msg);
+    sendMessage(msg: string, chatId: string|number, extra?: any) {
+        return this.bot.telegram.sendMessage(chatId, msg, extra);
     }
 
     private init() {
@@ -64,8 +64,26 @@ export class TelegramService {
 
     private help(ctx: ContextMessageUpdate) {
         return ctx.reply(`
-Вам нужна помощь?
-Пришли мне стикер.
+Вы можете прислать мне стикер))
+Но это не самое главное.
+
+Список команд:
+1) /check_in [BattleTag]:[Password]
+
+Например: /check_in MyNikname#1234:MyPassword
+Данная команда позволяет вам заригистрироваться в системе, как участник турниров.
+BattleTag - как в Hearthstone.
+Password - любой, также вы можете не вводить пароль и он будет сгенерирован автоматически.
+
+Пароль нужен для авторизации на сайте, но в данный момен это вам недастни каких-либо привелегий. В будуюшем планируется ведение и отслеживание статистики игрока, а также какой либо личный кабинет.
+
+* Также данную команду можно использовать для изменения BattleTag или Password.
+* BattleTag нужно вводить всегда, пароль является не обязательным.
+* Например, /check_in MyNewNikname#4321
+
+2) /add_me
+Данная команда покажет вам список турниров, в которых идет активный набор участников.
+Вы можете выбрать любой из них и вам будет предложено выбрать классы колод, на которых вы будете участвовать.
         `);
     }
 
@@ -134,6 +152,7 @@ export class TelegramService {
     private actionHandler() {
         (this.bot as any).action(/(tournament|deck):select:(.*)/, (ctx: ContextMessageUpdate) => this.selectDeck(ctx));
         (this.bot as any).action(/(tournament|deck):cancel/, (ctx: ContextMessageUpdate) => this.CancelSelect(ctx));
+        (this.bot as any).action(/ban:deck:(.*):(.*)/, (ctx: ContextMessageUpdate) => this.banDeck(ctx));
     }
 
     private CancelSelect(ctx: ContextMessageUpdate) {
@@ -209,15 +228,6 @@ export class TelegramService {
         }
     }
 
-    private hearsHandler() {
-        this.bot.hears(/[П,п]ривет/i, (ctx) => ctx.reply('Приветствую тебя'));
-        this.bot.hears(/(.*) [П,п]ока (.*)/i, (ctx) => {
-            console.log((ctx as any).match);
-            return ctx.reply('Пока пока');
-        });
-        this.bot.hears(/Забанить деку (.*) \((.*)\)/i, (ctx) => this.banDeck(ctx));
-    }
-
     private async banDeck(ctx: ContextMessageUpdate) {
         const match = (ctx as any).match;
         const deck = match[1];
@@ -237,19 +247,27 @@ export class TelegramService {
             let BattleTagToSend;
             if (ChatID === banRequest.GamerChatID) {
                 banRequest.OpponentBannedDeck = deck;
-                BattleTagToSend = banRequest.GamerBattleTag;
+                BattleTagToSend = banRequest.OpponentBattleTag;
                 DeckToSend = banRequest.GamerBannedDeck;
-                this.sendMessage(`Ваш противник ${banRequest.OpponentBattleTag} забанил ${deck}`, banRequest.OpponentChatID);
+                this.sendMessage(`Ваш противник ${banRequest.GamerBattleTag} забанил ${deck}`, banRequest.OpponentChatID);
             } else if (ChatID === banRequest.OpponentChatID) {
                 banRequest.GamerBannedDeck = deck;
-                BattleTagToSend = banRequest.OpponentBattleTag;
+                BattleTagToSend = banRequest.GamerBattleTag;
                 DeckToSend = banRequest.OpponentBannedDeck;
-                this.sendMessage(`Ваш противник ${banRequest.GamerBattleTag} забанил ${deck}`, banRequest.GamerChatID);
+                this.sendMessage(`Ваш противник ${banRequest.OpponentBattleTag} забанил ${deck}`, banRequest.GamerChatID);
             }
             return ctx.reply(`Ваш противник ${BattleTagToSend} забанил ${DeckToSend}`);
         } else {
             return ctx.reply('Ждём выбора противника.');
         }
+    }
+
+    private hearsHandler() {
+        this.bot.hears(/[П,п]ривет/i, (ctx) => ctx.reply('Приветствую тебя'));
+        this.bot.hears(/(.*) [П,п]ока (.*)/i, (ctx) => {
+            console.log((ctx as any).match);
+            return ctx.reply('Пока пока');
+        });
     }
 
     private generatePassword() {
