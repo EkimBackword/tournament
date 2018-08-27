@@ -11,12 +11,14 @@ export interface IBanRequest {
     GamerBattleTag: string;
     GamerDeckList: string;
     GamerBannedDeck?: string;
-    GamerChatID: number;
+    GamerResultInfo?: string;
+    GamerChatID?: number;
 
     OpponentBattleTag: string;
     OpponentDeckList: string;
     OpponentBannedDeck?: string;
-    OpponentChatID: number;
+    OpponentResultInfo?: string;
+    OpponentChatID?: number;
 
     Tournament?: ITournament;
 }
@@ -35,7 +37,9 @@ export default class BanRequest extends Model<BanRequest> implements IBanRequest
     GamerDeckList: string;
     @Column({ type: DataType.STRING, allowNull: true })
     GamerBannedDeck?: string;
-    @Column({ type: DataType.INTEGER })
+    @Column({ type: DataType.STRING, allowNull: true })
+    GamerResultInfo?: string;
+    @Column({ type: DataType.INTEGER, allowNull: true })
     GamerChatID: number;
 
     @Column({ type: DataType.STRING })
@@ -44,7 +48,9 @@ export default class BanRequest extends Model<BanRequest> implements IBanRequest
     OpponentDeckList: string;
     @Column({ type: DataType.STRING, allowNull: true })
     OpponentBannedDeck?: string;
-    @Column({ type: DataType.INTEGER })
+    @Column({ type: DataType.STRING, allowNull: true })
+    OpponentResultInfo?: string;
+    @Column({ type: DataType.INTEGER, allowNull: true })
     OpponentChatID: number;
 
     @BelongsTo(() => Tournament, 'TournamentID')

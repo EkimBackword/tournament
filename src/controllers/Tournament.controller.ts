@@ -214,7 +214,7 @@ export class TournamentController {
                 console.log(Request);
             }
 
-            return res.status(204).json();
+            return res.status(200).json(Request.toJSON());
         } catch (err) {
             console.log(err);
             return res.status(500).json(err);
@@ -222,15 +222,17 @@ export class TournamentController {
     }
 
     private async getOpponentInfo(GamerBattleTag: string, GamerChatID: number, OpponentBattleTag: string, DeckList: string, RequestID: number) {
-        const msg = `
+        if (GamerChatID !== null) {
+            const msg = `
 Доброго времени суток, ${GamerBattleTag}!
 Ваш следуюший оппонент: ${OpponentBattleTag}.
-Введите колоду, которую вы хотите забанить:`;
-        return this.TelegramServiceInstance.sendMessage(msg, GamerChatID,
-            Markup.inlineKeyboard(
-                DECK_CLASSES.filter(d => DeckList.split(', ').some(_d => _d === d.id))
-                            .map(d => Markup.callbackButton(d.title, `ban:deck:${d.id}:${RequestID}`))
-            , {columns: 1}).extra()
-        );
+Выберите колоду, которую вы хотите забанить:`;
+            return this.TelegramServiceInstance.sendMessage(msg, GamerChatID,
+                Markup.inlineKeyboard(
+                    DECK_CLASSES.filter(d => DeckList.split(', ').some(_d => _d === d.id))
+                                .map(d => Markup.callbackButton(d.title, `ban:deck:${d.id}:${RequestID}`))
+                , {columns: 1}).extra()
+            );
+        }
     }
 }

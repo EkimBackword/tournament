@@ -90,6 +90,9 @@ export class UserController {
                 Role: req.body.Role,
                 Hash: hash
             };
+            if (req.body.BattleTag) {
+                data.BattleTag = req.body.BattleTag;
+            }
             let newUser = new User(data);
             newUser = await newUser.save();
             return res.status(204).json();
@@ -115,6 +118,9 @@ export class UserController {
             if (req.body.Password !== void 0) {
                 const hash = passwordHash.generate(req.body.Password);
                 CurrentUser.Hash = hash;
+            }
+            if (req.body.BattleTag) {
+                CurrentUser.BattleTag = req.body.BattleTag;
             }
             await CurrentUser.save();
             return res.status(204).json();
