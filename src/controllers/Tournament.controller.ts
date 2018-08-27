@@ -6,7 +6,7 @@ import { isAuth, requireAdmin } from '../authentication';
 import User, { IUser, UserRoles } from '../models/User';
 import Tournament, { ITournament, TournamentStatusENUM } from '../models/Tournament';
 import { TelegramService } from '../telegram/telegram.service';
-import Members from '../models/Members';
+import Members, { IMembers } from '../models/Members';
 import BanRequest, { IBanRequest } from '../models/BanRequest';
 
 import { DECK_CLASSES } from '../telegram/hearthstone.info';
@@ -27,6 +27,8 @@ export class TournamentController {
         router.get('/:id', this.tournamentDetails);
         router.post('/:id/edit', isAuth, this.edit);
         router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo.bind(this));
+        router.post('/:id/add-member', isAuth, this.addMember.bind(this));
+        router.post('/:id/get-ban-request-list', isAuth, this.getBanRequestList.bind(this));
         router.delete('/:id', requireAdmin, this.delete);
 
 
@@ -233,6 +235,74 @@ export class TournamentController {
                                 .map(d => Markup.callbackButton(d.title, `ban:deck:${d.id}:${RequestID}`))
                 , {columns: 1}).extra()
             );
+        }
+    }
+
+    /**
+     * Добавление участника в турнир
+     * @param req Request { body: { JsonData, JsonData, ID } }
+     * @param res Response
+     */
+    private async addMember(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            const tournament = await Tournament.findById<Tournament>(id);
+            if (tournament === null) {
+                return res.status(404).json({ message: 'Такого турнира нет'});
+            }
+            const user = await User.findById<User>(req.body.userId);
+            if (user === null) {
+                return res.status(404).json({ message: 'Такого пользователя нет'});
+            }
+
+            const data: IMembers = {
+                UserID: user.ID,
+                TournamentID: tournament.ID,
+                DeckList: DECK_CLASSES.filter(d => req.body.Decks.some((_d: any) => _d === d.id))
+                                    .map(d => d.id)
+                                    .join(', ')
+            };
+            let newMember = new Members(data);
+            newMember = await newMember.save();
+            return res.status(204).json();
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    }
+
+    /**
+     * Добавление участника в турнир
+     * @param req Request { body: { JsonData, JsonData, ID } }
+     * @param res Response
+     */
+    private async getBanRequestList(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            const tournament = await Tournament.findById<Tournament>(id);
+            if (tournament === null) {
+                return res.status(404).json({ message: 'Такого турнира нет'});
+            }
+            const user = await User.findById<User>(req.body.userId);
+            if (user === null) {
+                return res.status(404).json({ message: 'Такого пользователя нет'});
+            }
+
+            let banRequest = await BanRequest.findAll<BanRequest>({
+                where: {
+                    'TournamentID': tournament.ID,
+                    'GamerBattleTag': user.BattleTag
+                }
+            });
+            banRequest = banRequest.concat(await BanRequest.findAll<BanRequest>({
+                where: {
+                    'TournamentID': tournament.ID,
+                    'OpponentBattleTag': user.BattleTag
+                }
+            }));
+
+            return res.status(200).json(banRequest.map(r => r.toJSON()));
+        } catch (err) {
+            return res.status(500).json(err);
         }
     }
 }

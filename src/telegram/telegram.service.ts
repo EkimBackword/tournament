@@ -104,7 +104,7 @@ Password - любой, также вы можете не вводить паро
                 if (Password) {
                     const hash = passwordHash.generate(Password);
                     user.Hash = hash;
-                    result += `Пароль: ${user.BattleTag};`;
+                    result += `Пароль: ${Password};`;
                 }
                 await user.save();
                 return ctx.reply(result);
