@@ -77,9 +77,9 @@ export class UserController {
         const error = await User.checkFullModel(req);
         if (error != null) return res.status(400).json(error);
 
-        const existsUser = await User.findOne<User>({where: { Login: req.body.Login }});
+        const existsUser = await User.findOne<User>({where: Sequelize.or({ Login: req.body.Login }, { BattleTag: req.body.BattleTag })});
         if (existsUser != null) {
-            return res.status(400).json({ message: 'Пользователь с таким Login уже существует'});
+            return res.status(400).json({ message: 'Пользователь с таким Login или BattleTag уже существует'});
         }
 
         try {

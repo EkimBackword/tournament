@@ -97,7 +97,11 @@ Password - любой, также вы можете не вводить паро
         try {
             const BattleTag = msg[1].split(':')[0];
             const Password = msg[1].split(':')[1];
+            const userWithThisBattleTag = await User.find<User>({ where: { 'BattleTag': BattleTag } });
             const user = await User.find<User>({ where: { 'ChatID': ctx.chat.id } });
+            if (userWithThisBattleTag && user.ID !== userWithThisBattleTag.ID) {
+                return ctx.reply(`С данным BattleTag уже существует пользователь!`);
+            }
             if (user) {
                 user.BattleTag = BattleTag;
                 let result = `Данные изменены!\r\nЛогин: ${user.Login};\r\nBattleTag: ${user.BattleTag};\r\n`;
@@ -274,6 +278,18 @@ Password - любой, также вы можете не вводить паро
             console.log((ctx as any).match);
             return ctx.reply('Пока пока');
         });
+
+        this.bot.hears(/[П,п]обеда (.*)/i, (ctx) => this.winOrLoss(ctx, 'Победил(а)'));
+        this.bot.hears(/[П,п]оражение (.*)/i, (ctx) => this.winOrLoss(ctx, 'Проиграл(а)'));
+    }
+
+    private async winOrLoss(ctx: ContextMessageUpdate, state: string) {
+        const user = await User.find<User>({ where: { 'ChatID': ctx.chat.id } });
+        const msg = `
+Игрок ${user.BattleTag} сообщает о результате игры:
+${state} : ${(ctx as any).match[1]}
+        `;
+        return await this.sendMessage(msg, 246156135);
     }
 
     private generatePassword() {

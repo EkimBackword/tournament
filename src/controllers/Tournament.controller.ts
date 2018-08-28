@@ -29,6 +29,7 @@ export class TournamentController {
         router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo.bind(this));
         router.post('/:id/add-member', isAuth, this.addMember.bind(this));
         router.post('/:id/get-ban-request-list', isAuth, this.getBanRequestList.bind(this));
+        router.post('/:id/save-ban-request', isAuth, this.saveBanRequest.bind(this));
         router.delete('/:id', requireAdmin, this.delete);
 
 
@@ -294,11 +295,57 @@ export class TournamentController {
                         {'GamerBattleTag': user.BattleTag},
                         {'OpponentBattleTag': user.BattleTag}
                     )
-                ])
+                ]),
+                order: [['ID', 'DESC']]
             });
             await BanRequest.findAll<BanRequest>();
 
             return res.status(200).json(banRequest.map(r => r.toJSON()));
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    }
+
+    /**
+     * Добавление участника в турнир
+     * @param req Request { body: { JsonData, JsonData, ID } }
+     * @param res Response
+     */
+    private async saveBanRequest(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            const tournament = await Tournament.findById<Tournament>(id);
+            if (tournament === null) {
+                return res.status(404).json({ message: 'Такого турнира нет'});
+            }
+            const banRequestData: IBanRequest = req.body;
+            const banRequest = await BanRequest.findById<BanRequest>(banRequestData.ID);
+            if (banRequest === null) {
+                return res.status(404).json({ message: 'Такого матча нет'});
+            }
+
+            if (banRequest.GamerResultInfo !== banRequestData.GamerResultInfo) {
+                const msg = `
+Игрок ${banRequest.GamerBattleTag} сообщает о результате игры против ${banRequest.OpponentBattleTag}:
+${banRequestData.GamerResultInfo}
+                `;
+                this.TelegramServiceInstance.sendMessage(msg, 246156135);
+                banRequest.GamerResultInfo = banRequestData.GamerResultInfo;
+            }
+            banRequest.GamerBannedDeck = banRequestData.GamerBannedDeck;
+
+            if (banRequest.OpponentResultInfo !== banRequestData.OpponentResultInfo) {
+                const msg = `
+Игрок ${banRequest.OpponentBattleTag} сообщает о результате игры против ${banRequest.GamerBattleTag}:
+${banRequestData.OpponentResultInfo}
+                `;
+                this.TelegramServiceInstance.sendMessage(msg, 246156135);
+                banRequest.OpponentResultInfo = banRequestData.OpponentResultInfo;
+            }
+            banRequest.OpponentBannedDeck = banRequestData.OpponentBannedDeck;
+
+            await banRequest.save();
+            return res.status(204).json();
         } catch (err) {
             return res.status(500).json(err);
         }
