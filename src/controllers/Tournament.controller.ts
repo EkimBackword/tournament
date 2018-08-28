@@ -73,7 +73,7 @@ export class TournamentController {
         if (UserID !== void 0) {
             WHERE['UserID'] = UserID;
         }
-        const data = await Tournament.findAll<Tournament>({ where: WHERE, offset, limit });
+        const data = await Tournament.findAll<Tournament>({ where: WHERE, offset, limit, order: [['ID', 'DESC']] });
         const count = await Tournament.count({ where: WHERE });
         const result = data.map(u => u.toJSON());
         return res.json({ result, count });
@@ -287,18 +287,16 @@ export class TournamentController {
                 return res.status(404).json({ message: 'Такого пользователя нет'});
             }
 
-            let banRequest = await BanRequest.findAll<BanRequest>({
-                where: {
-                    'TournamentID': tournament.ID,
-                    'GamerBattleTag': user.BattleTag
-                }
+            const banRequest = await BanRequest.findAll<BanRequest>({
+                where: Sequelize.and([
+                    {'TournamentID': tournament.ID},
+                    Sequelize.or(
+                        {'GamerBattleTag': user.BattleTag},
+                        {'OpponentBattleTag': user.BattleTag}
+                    )
+                ])
             });
-            banRequest = banRequest.concat(await BanRequest.findAll<BanRequest>({
-                where: {
-                    'TournamentID': tournament.ID,
-                    'OpponentBattleTag': user.BattleTag
-                }
-            }));
+            await BanRequest.findAll<BanRequest>();
 
             return res.status(200).json(banRequest.map(r => r.toJSON()));
         } catch (err) {
