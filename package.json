@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "npm run build-ts && npm run watch",
+    "prod-start": "npm run build-ts && pm2 delete dist/server.js && pm2 start dist/server.js",
     "serve": "nodemon dist/server.js",
-    "serve-pm": "pm2 start dist/server.js",
     "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-ts\" \"npm run serve\"",
     "test": "jest --forceExit",
     "build-ts": "tsc",
