@@ -9,16 +9,16 @@ const options: any = {
 };
 
 describe('Добавление нового пользователя', () => {
-    it('204 (Добавить в БД)', (done) => {
-      request.post('/add')
-        .send({
-            Login: 'root',
-            Password: 'test123',
-            FIO: 'Тестовый Тест Тестович',
-            Role: 'admin'
-        })
-        .expect(204, done);
-    });
+    // it('204 (Добавить в БД)', (done) => {
+    //   request.post('/add')
+    //     .send({
+    //         Login: 'tavern',
+    //         Password: 'qwertyabc',
+    //         FIO: 'Организатор турниров',
+    //         Role: 'admin'
+    //     })
+    //     .expect(204, done);
+    // });
 
     // it("400 (Пользователь с таким Email уже существует)", (done) => {
     //   request.post("/add")
