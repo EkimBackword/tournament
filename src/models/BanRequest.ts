@@ -53,6 +53,6 @@ export default class BanRequest extends Model<BanRequest> implements IBanRequest
     @Column({ type: DataType.INTEGER, allowNull: true })
     OpponentChatID: number;
 
-    @BelongsTo(() => Tournament, 'TournamentID')
+    @BelongsTo(() => Tournament, { foreignKey: 'TournamentID', onDelete: 'CASCADE', onUpdate: 'CASCADE'})
     Tournament?: ITournament;
 }

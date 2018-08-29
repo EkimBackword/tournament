@@ -29,7 +29,7 @@ export default class Members extends Model<Members> implements IMembers {
 
     @BelongsTo(() => User, 'UserID')
     User?: IUser;
-    @BelongsTo(() => Tournament, 'TournamentID')
+    @BelongsTo(() => Tournament, { foreignKey: 'TournamentID', onDelete: 'CASCADE', onUpdate: 'CASCADE'})
     Tournament?: ITournament;
 
     /** [].join(',') */
