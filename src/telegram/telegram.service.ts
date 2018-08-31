@@ -1,11 +1,14 @@
 import Telegraf, { Context, ContextMessageUpdate } from 'telegraf';
 const SocksAgent = require('socks5-https-client/lib/Agent');
-import { TELEGRAM_CONFIG } from '../config/database.config';
+import { TELEGRAM_CONFIG, RAVEN_CONFIG } from '../config/database.config';
 import { DECK_CLASSES, getRuName } from './hearthstone.info';
 import Tournament, { TournamentStatusENUM } from '../models/Tournament';
 import User, { IUser } from '../models/User';
 import Members, { UserRoles, IMembers } from '../models/Members';
 import BanRequest from '../models/BanRequest';
+
+import * as Raven from 'raven';
+Raven.config(RAVEN_CONFIG.url).install();
 
 const Markup = require('telegraf/markup');
 const session = require('telegraf/session');
@@ -28,6 +31,7 @@ export class TelegramService {
         this.init();
         (this.bot as any).catch((err: any) => {
             console.log('Ooops', err);
+            Raven.captureException(err);
         });
         this.bot.startPolling();
         Instance = this;
