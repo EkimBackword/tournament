@@ -1,3 +1,4 @@
+import { RAVEN_CONFIG } from './config/database.config';
 'use strict';
 
 import * as express from 'express';
@@ -5,6 +6,7 @@ import * as bodyParser from 'body-parser';
 import expressValidator = require('express-validator');
 import session = require('express-session');
 import * as passport from 'passport';
+import * as Raven from 'raven';
 
 import db from './db';
 
@@ -34,6 +36,9 @@ app.use(passport.session());
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/../../src'));
 
+Raven.config(RAVEN_CONFIG.url).install();
+app.use(Raven.requestHandler());
+
 import './authentication';
 import { UserController } from './controllers/User.controller';
 import { TournamentController } from './controllers/Tournament.controller';
@@ -42,6 +47,9 @@ import { TelegramService } from './telegram/telegram.service';
 
 app.get('/test', (req, res) => {
     res.send('Тест');
+    // setTimeout(() => {
+    //     throw 'Тестовая Ошибка';
+    // }, 1000);
 });
 new TelegramService();
 new UserController(app);
