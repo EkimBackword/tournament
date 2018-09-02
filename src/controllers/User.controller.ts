@@ -19,6 +19,8 @@ import Tournament from '../models/Tournament';
 // );
 // const uploader = multer({ dest: 'files/', storage: storage });
 
+export let telegramRequestList: ITelegramRequest[] = [];
+
 export class UserController {
     constructor(app: Application) {
         const router = Router();
@@ -28,6 +30,7 @@ export class UserController {
         router.get('/profile', isAuth, this.profile);
         router.get('/list', isAuth, this.list);
         router.get('/search/:term', isAuth, this.search);
+        router.get('/:id/telegram-request', isAuth, this.telegramRequest);
         router.post('/add', this.add);
         router.patch('/edit/:id', requireAdmin, this.edit);
 
@@ -176,4 +179,38 @@ export class UserController {
             return res.status(500).json(err);
         }
     }
+
+    private async telegramRequest(req: Request, res: Response) {
+        const id = req.params.id;
+        const user = await User.findById<User>(id);
+
+        if (user === null) {
+            return res.status(404).json({ message: 'Такого пользователя нет'});
+        }
+
+        try {
+            const guid = UserController.guid();
+            telegramRequestList.push({
+                TelegramRequestID: guid,
+                UserID: user.ID
+            });
+            return res.status(200).json(guid);
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    }
+
+    static guid() {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000)
+            .toString(16)
+            .substring(1);
+        }
+        return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+    }
+}
+
+export interface ITelegramRequest {
+    UserID: number;
+    TelegramRequestID: string;
 }

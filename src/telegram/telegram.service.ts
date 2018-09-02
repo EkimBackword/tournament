@@ -8,6 +8,7 @@ import Members, { UserRoles, IMembers } from '../models/Members';
 import BanRequest from '../models/BanRequest';
 
 import * as Raven from 'raven';
+import { telegramRequestList } from '../controllers/User.controller';
 Raven.config(RAVEN_CONFIG.url).install();
 
 const Markup = require('telegraf/markup');
@@ -94,6 +95,25 @@ Password - любой, также вы можете не вводить паро
     private commandHandler() {
         this.bot.command('add_me', (ctx) => this.addToTournament(ctx));
         this.bot.command('check_in', (ctx) => this.checkIn(ctx));
+        this.bot.command('request', (ctx) => this.request(ctx));
+    }
+
+    private async request(ctx: ContextMessageUpdate) {
+        const msg = /\/request (.*)/.exec(ctx.message.text);
+        try {
+            const requestID = msg[1];
+            const telegramRequest = telegramRequestList.find(r =>  r.TelegramRequestID === requestID );
+            if (telegramRequest) {
+                const user = await User.findById<User>(telegramRequest.UserID);
+                user.ChatID = ctx.chat.id;
+                await user.save();
+                return ctx.reply(`Данный чат, с текушего момента, прикреплён к игроку с BattleTag: ${user.BattleTag} и Логином: ${user.Login}`);
+            } else {
+                return ctx.reply(`Данный запрос отсутствует`);
+            }
+        } catch (err) {
+            return ctx.reply(`Произошла ошибка!`);
+        }
     }
 
     private async checkIn(ctx: ContextMessageUpdate) {
