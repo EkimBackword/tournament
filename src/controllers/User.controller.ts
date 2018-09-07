@@ -30,7 +30,7 @@ export class UserController {
         router.get('/profile', isAuth, this.profile);
         router.get('/list', isAuth, this.list);
         router.get('/search/:term', isAuth, this.search);
-        router.get('/:id/telegram-request', isAuth, this.telegramRequest);
+        router.get('/telegram-request', isAuth, this.telegramRequest);
         router.post('/add', this.add);
         router.patch('/edit/:id', requireAdmin, this.edit);
 
@@ -181,7 +181,7 @@ export class UserController {
     }
 
     private async telegramRequest(req: Request, res: Response) {
-        const id = req.params.id;
+        const id = req.user.ID;
         const user = await User.findById<User>(id);
 
         if (user === null) {
