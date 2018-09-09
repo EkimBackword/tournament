@@ -229,11 +229,13 @@ export class TournamentController {
             const msg = `
 Доброго времени суток, ${GamerBattleTag}!
 Ваш следуюший оппонент: ${OpponentBattleTag}.
+p.s. Помните что в группе мы не баним 4-ую колоду (⚠️), так как она является дополнительно для плай-офф.
+
 Выберите колоду, которую вы хотите забанить:`;
             return this.TelegramServiceInstance.sendMessage(msg, GamerChatID,
                 Markup.inlineKeyboard(
                     DECK_CLASSES.filter(d => DeckList.split(', ').some(_d => _d === d.id))
-                                .map(d => Markup.callbackButton(d.title, `ban:deck:${d.id}:${RequestID}`))
+                                .map((d, index) => Markup.callbackButton(d.title + (index === 3 ? '⚠️' : ''), `ban:deck:${d.id}:${RequestID}`))
                 , {columns: 1}).extra()
             );
         }

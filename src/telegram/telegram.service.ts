@@ -80,8 +80,6 @@ export class TelegramService {
 BattleTag - как в Hearthstone.
 Password - любой, также вы можете не вводить пароль и он будет сгенерирован автоматически.
 
-Пароль нужен для авторизации на сайте, но в данный момен это вам недастни каких-либо привелегий. В будуюшем планируется ведение и отслеживание статистики игрока, а также какой либо личный кабинет.
-
 * Также данную команду можно использовать для изменения BattleTag или Password.
 * BattleTag нужно вводить всегда, пароль является не обязательным.
 * Например, /check_in MyNewNikname#4321
@@ -246,7 +244,7 @@ Password - любой, также вы можете не вводить паро
                 return ctx.reply(`Произошла ошибка!`);
             }
         } else {
-            return ctx.reply(`Выберите класс ${decksString}`,
+            return ctx.reply(`Выберите класс ${decksString} ${selectedTournament.decks.length}/${selectedTournament.deckCount}. \r\np.s. 4-ая колода является дополнительной. Её вы выбираете в последнюю очередь.`,
                 Markup.inlineKeyboard(
                     DECK_CLASSES.filter(d => !decks.some(_d => _d === d.id))
                                 .map(d => Markup.callbackButton(d.title, `deck:select:${d.id}`))
@@ -303,15 +301,15 @@ Password - любой, также вы можете не вводить паро
             return ctx.reply('Пока пока');
         });
 
-        this.bot.hears(/[П,п]обеда (.*)/i, (ctx) => this.winOrLoss(ctx, 'Победил(а)'));
-        this.bot.hears(/[П,п]оражение (.*)/i, (ctx) => this.winOrLoss(ctx, 'Проиграл(а)'));
+        this.bot.hears(/([П,п]обеда|[П,п]обедил|[П,п]обедила) (.*)/i, (ctx) => this.winOrLoss(ctx, 'Победил(а)'));
+        this.bot.hears(/([П,п]оражение|[П,п]роиграл|[П,п]роиграла) (.*)/i, (ctx) => this.winOrLoss(ctx, 'Проиграл(а)'));
     }
 
     private async winOrLoss(ctx: ContextMessageUpdate, state: string) {
         const user = await User.find<User>({ where: { 'ChatID': ctx.chat.id } });
         const msg = `
 Игрок ${user.BattleTag} сообщает о результате игры:
-${state} : ${(ctx as any).match[1]}
+${state} : ${(ctx as any).match[2]}
         `;
         return await this.sendMessage(msg, 246156135);
     }
