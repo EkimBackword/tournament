@@ -75,14 +75,14 @@ export class TelegramService {
 Список команд:
 1) /check_in [BattleTag]:[Password]
 
-Например: /check_in MyNikname#1234:MyPassword
-Данная команда позволяет вам заригистрироваться в системе, как участник турниров.
+Например: /check_in MyNiсkname#1234:MyPassword
+Данная команда позволяет вам зарегистрироваться в системе как участник турниров.
 BattleTag - как в Hearthstone.
-Password - любой, также вы можете не вводить пароль и он будет сгенерирован автоматически.
+Password - любой. Также вы можете не вводить пароль, и он будет сгенерирован автоматически.
 
 * Также данную команду можно использовать для изменения BattleTag или Password.
 * BattleTag нужно вводить всегда, пароль является не обязательным.
-* Например, /check_in MyNewNikname#4321
+* Например, /check_in MyNewNiсkname#4321.
 
 2) /add_me
 Данная команда покажет вам список турниров, в которых идет активный набор участников.
@@ -137,9 +137,14 @@ Password - любой, также вы можете не вводить паро
             } else {
                 const _Password = Password ? Password : this.generatePassword();
                 const hash = passwordHash.generate(_Password);
+                let last_name = ctx.chat.last_name ? ctx.chat.last_name + ' ' : '';
+                const first_name = ctx.chat.first_name ? ctx.chat.first_name + ' ' : '';
+                if (!last_name && !first_name) {
+                    last_name = 'NONAME';
+                }
                 const data: IUser = {
                     Login: ctx.chat.username ? ctx.chat.username : ( BattleTag ? BattleTag : 'User_From_Telegram' ),
-                    FIO: `${ctx.chat.last_name} ${ctx.chat.first_name}`,
+                    FIO: `${last_name} ${first_name}`,
                     Role: UserRoles.user,
                     Hash: hash,
                     ChatID: ctx.chat.id,
