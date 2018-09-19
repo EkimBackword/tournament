@@ -28,6 +28,7 @@ export class TournamentController {
         router.post('/:id/edit', isAuth, this.edit);
         router.post('/:id/send-opponent-info', isAuth, this.sendOpponentInfo.bind(this));
         router.post('/:id/add-member', isAuth, this.addMember.bind(this));
+        router.post('/:id/edit-member', isAuth, this.editMember.bind(this));
         router.post('/:id/get-ban-request-list', isAuth, this.getBanRequestList.bind(this));
         router.post('/:id/save-ban-request', isAuth, this.saveBanRequest.bind(this));
         router.delete('/:id', requireAdmin, this.delete);
@@ -261,12 +262,50 @@ p.s. Помните что в группе мы не баним 4-ую коло�
             const data: IMembers = {
                 UserID: user.ID,
                 TournamentID: tournament.ID,
-                DeckList: DECK_CLASSES.filter(d => req.body.Decks.some((_d: any) => _d === d.id))
-                                    .map(d => d.id)
-                                    .join(', ')
+                DeckList: req.body.Decks.filter((d: string) => DECK_CLASSES.some((_d) => _d.id === d)).join(', ')
             };
             let newMember = new Members(data);
             newMember = await newMember.save();
+            return res.status(204).json();
+        } catch (err) {
+            return res.status(500).json(err);
+        }
+    }
+
+    /**
+     * Добавление участника в турнир
+     * @param req Request { body: { JsonData, JsonData, ID } }
+     * @param res Response
+     */
+    private async editMember(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            const UserID = req.user.ID;
+            const tournament = await Tournament.findById<Tournament>(id);
+            if (tournament === null) {
+                return res.status(404).json({ message: 'Такого турнира нет'});
+            }
+            if (tournament.Status === TournamentStatusENUM.start) {
+                return res.status(404).json({ message: 'Турнир уже проводиться, замена классов запрещена'});
+            } else if (tournament.Status === TournamentStatusENUM.finished) {
+                return res.status(404).json({ message: 'Турнир уже закончен, так что менять классы нет смысла'});
+            }
+            const user = await User.findById<User>(UserID);
+            if (user === null) {
+                return res.status(404).json({ message: 'Такого пользователя нет'});
+            }
+            const member = await Members.findById<Members>(req.body.memberID);
+            if (member === null) {
+                return res.status(404).json({ message: 'Такого участника нет' });
+            }
+            if (member.UserID !== UserID) {
+                return res.status(404).json({ message: 'Редактировать можно только свои колоды' });
+            }
+
+            member.DeckList = req.body.Decks.filter((d: string) => DECK_CLASSES.some((_d) => _d.id === d))
+                .join(', ');
+
+            await member.save();
             return res.status(204).json();
         } catch (err) {
             return res.status(500).json(err);
