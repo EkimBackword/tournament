@@ -252,8 +252,10 @@ Password - любой. Также вы можете не вводить паро
                 };
                 let newMember = new Members(data);
                 newMember = await newMember.save();
+                (ctx as any).session.selectedTournament = null;
                 return ctx.reply(`Вы зарегистрировны! ${decksString}`);
             } catch (err) {
+                (ctx as any).session.selectedTournament = null;
                 return ctx.reply(`Произошла ошибка!`);
             }
         } else {
