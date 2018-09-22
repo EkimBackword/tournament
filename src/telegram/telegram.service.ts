@@ -203,9 +203,14 @@ Password - любой. Также вы можете не вводить паро
                 const decks: string[] = existMember.DeckList.split(', ');
                 const decksString = decks.length > 0 ?
                     '(Вы выбрали колоды: ' +
-                    DECK_CLASSES.filter(d => decks.some(_d => _d === d.id))
-                        .map(d => d.title)
-                        .join(', ')
+                    decks.map((d: string) => {
+                        const deck = DECK_CLASSES.find((_d) => _d.id === d);
+                        if (deck) {
+                            return deck.title;
+                        } else {
+                            return '<unknow deck>';
+                        }
+                    }).join(', ')
                     + ')' :
                     '';
                 return ctx.reply(`Вы уже зарегистрировны в этом турнире! ${decksString}`);
@@ -228,9 +233,14 @@ Password - любой. Также вы можете не вводить паро
         const decks: string[] = selectedTournament.decks;
         const decksString = decks.length > 0 ?
             '(Вы выбрали колоды: ' +
-            DECK_CLASSES.filter(d => decks.some(_d => _d === d.id))
-                .map(d => d.title)
-                .join(', ')
+            decks.map((d: string) => {
+                const deck = DECK_CLASSES.find((_d) => _d.id === d);
+                if (deck) {
+                    return deck.title;
+                } else {
+                    return '<unknow deck>';
+                }
+            }).join(', ')
             + ')' :
             '';
         if (selectedTournament.deckCount == selectedTournament.decks.length) {
@@ -238,9 +248,7 @@ Password - любой. Также вы можете не вводить паро
                 const data: IMembers = {
                     UserID: user.ID,
                     TournamentID: tournament.ID,
-                    DeckList: DECK_CLASSES.filter(d => decks.some(_d => _d === d.id))
-                                        .map(d => d.id)
-                                        .join(', ')
+                    DeckList: decks.join(', ')
                 };
                 let newMember = new Members(data);
                 newMember = await newMember.save();
