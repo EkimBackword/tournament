@@ -234,7 +234,7 @@ export class TournamentController {
             const msg = `
 Доброго времени суток, ${GamerBattleTag}!
 Ваш следуюший оппонент: ${OpponentBattleTag}.
-p.s. Помните что в группе мы не баним 4-ую колоду (⚠️), так как она является дополнительно для плай-офф.
+p.s. Помните что в группе мы не баним 4-ую колоду (⚠️), так как она является дополнительно для плей-офф.
 
 Выберите колоду, которую вы хотите забанить:`;
             return this.TelegramServiceInstance.sendMessage(msg, GamerChatID,
