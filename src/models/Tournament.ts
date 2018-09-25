@@ -12,6 +12,8 @@ export interface ITournament {
     JsonData: string;
     Status: TournamentStatusENUM;
     DeckCount: number;
+    DeckForGroup?: number;
+    DeckForPlayoff?: number;
     UserID?: number;
     CreationDate?: Date;
     UpdatedAt?: Date;
@@ -32,6 +34,10 @@ export default class Tournament extends Model<Tournament> implements ITournament
     Status: TournamentStatusENUM;
     @Column({ type: DataType.INTEGER, defaultValue: 4 })
     DeckCount: number;
+    @Column({ type: DataType.INTEGER, defaultValue: 3 })
+    DeckForGroup?: number;
+    @Column({ type: DataType.INTEGER, defaultValue: 4 })
+    DeckForPlayoff?: number;
     @ForeignKey(() => User)
     @Column({ type: DataType.INTEGER, allowNull: true })
     UserID?: number;

@@ -9,7 +9,7 @@ import { TelegramService } from '../telegram/telegram.service';
 import Members, { IMembers } from '../models/Members';
 import BanRequest, { IBanRequest } from '../models/BanRequest';
 
-import { DECK_CLASSES } from '../telegram/hearthstone.info';
+import { DECK_CLASSES, getRuName } from '../telegram/hearthstone.info';
 const Markup = require('telegraf/markup');
 
 export class TournamentController {
@@ -184,17 +184,21 @@ export class TournamentController {
             const gamer = await User.findById<User>(req.body.gamerID, { include: [ Members ] });
             const opponent = await User.findById<User>(req.body.opponentID, { include: [ Members ] });
 
+            let DeckCount = 4;
+            if (tournament !== null && req.body.round) {
+                DeckCount = req.body.round === 'group' ? tournament.DeckForGroup : tournament.DeckForPlayoff;
+            }
 
             const banRequest: IBanRequest = {
                 TournamentID: tournament.ID,
 
                 GamerBattleTag: gamer.BattleTag,
                 GamerChatID: gamer.ChatID,
-                GamerDeckList: gamer.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList,
+                GamerDeckList: gamer.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList.split(', ').filter((v, i) => i < DeckCount).join(', '),
 
                 OpponentBattleTag: opponent.BattleTag,
                 OpponentChatID: opponent.ChatID,
-                OpponentDeckList: opponent.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList,
+                OpponentDeckList: opponent.TournamentsAsMember.find(m => m.TournamentID == tournament.ID).DeckList.split(', ').filter((v, i) => i < DeckCount).join(', '),
             };
 
             let Request = new BanRequest(banRequest);
@@ -363,6 +367,16 @@ p.s. Помните что в группе мы не баним 4-ую коло�
             const banRequest = await BanRequest.findById<BanRequest>(banRequestData.ID);
             if (banRequest === null) {
                 return res.status(404).json({ message: 'Такого матча нет'});
+            }
+
+            if (banRequestData.OpponentBannedDeck && banRequestData.GamerBannedDeck) {
+                if (banRequest.GamerBannedDeck === null && banRequest.GamerChatID) {
+                    const deck = banRequestData.GamerBannedDeck;
+                    this.TelegramServiceInstance.sendMessage(`Ваш противник ${banRequest.OpponentBattleTag} забанил ${getRuName(deck)}`, banRequest.GamerChatID);
+                } else if (banRequest.OpponentBannedDeck === null && banRequest.OpponentChatID) {
+                    const deck = banRequestData.OpponentBannedDeck;
+                    this.TelegramServiceInstance.sendMessage(`Ваш противник ${banRequest.GamerBattleTag} забанил ${getRuName(deck)}`, banRequest.OpponentChatID);
+                }
             }
 
             if (banRequest.GamerResultInfo !== banRequestData.GamerResultInfo) {
